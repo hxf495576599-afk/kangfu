@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0e7c66">
+<title>康复评定助手</title>
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+:root{
+  --bg:#f4f6f5; --card:#ffffff; --ink:#1c2b2a; --muted:#5f6f6d; --line:#dfe7e5;
+  --accent:#0e7c66; --accent-d:#0a5f4f; --accent-soft:#e3f2ee; --warn:#b3541e; --danger:#b3261e;
+  --radius:12px; --shadow:0 1px 3px rgba(20,40,38,.08),0 6px 18px rgba(20,40,38,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;min-height:100vh}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+input,select,textarea{font-family:inherit;font-size:1rem}
+.hidden{display:none!important}
+
+#auth-view{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.auth-card{background:var(--card);border-radius:16px;box-shadow:var(--shadow);width:100%;max-width:420px;padding:36px 32px}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.brand-mark{width:44px;height:44px;border-radius:12px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center}
+.brand h1{font-size:1.35rem;letter-spacing:.02em}
+.brand-sub{color:var(--muted);font-size:.86rem;margin-bottom:22px}
+.tabs{display:flex;gap:8px;margin-bottom:20px;background:var(--bg);padding:4px;border-radius:10px}
+.tabs button{flex:1;padding:9px;border-radius:8px;font-size:.95rem;color:var(--muted);font-weight:600}
+.tabs button.on{background:#fff;color:var(--accent);box-shadow:var(--shadow)}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:5px;font-weight:600}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:#fbfdfd;color:var(--ink)}
+.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 20px;border-radius:10px;font-weight:600;font-size:.95rem;transition:.15s}
+.btn-primary{background:var(--accent);color:#fff;width:100%}
+.btn-primary:hover{background:var(--accent-d)}
+.btn-line{border:1px solid var(--line);background:#fff;color:var(--ink)}
+.btn-line:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:#fdecea;color:var(--danger);border:1px solid #f3c1bd}
+.btn-sm{padding:6px 12px;font-size:.84rem;border-radius:8px}
+.form-msg{font-size:.85rem;color:var(--danger);min-height:1.3em;margin:6px 0}
+.privacy-note{margin-top:18px;padding:10px 12px;background:var(--accent-soft);border-radius:9px;font-size:.78rem;color:var(--accent-d);display:flex;gap:8px;align-items:flex-start}
+.linkish{color:var(--accent);text-decoration:underline;text-underline-offset:3px;font-size:.85rem;cursor:pointer}
+
+.topbar{background:#0f2b26;color:#e8f3f0;padding:0 22px;height:58px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:20}
+.topbar .t-title{font-weight:700;font-size:1.05rem;display:flex;align-items:center;gap:10px}
+.topbar .t-user{margin-left:auto;font-size:.85rem;color:#b8d4cd;display:flex;align-items:center;gap:12px}
+.role-badge{font-size:.72rem;padding:2px 9px;border-radius:99px;background:#1d4a41;color:#9fd8c9}
+.logout{color:#cfe6e0;font-size:.85rem;text-decoration:underline;text-underline-offset:3px}
+.shell{display:grid;grid-template-columns:210px 1fr;min-height:calc(100vh - 58px)}
+.sidebar{background:#fff;border-right:1px solid var(--line);padding:16px 10px}
+.nav-item{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;border-radius:10px;font-size:.93rem;color:var(--muted);font-weight:600;text-align:left;margin-bottom:4px}
+.nav-item:hover{background:var(--bg)}
+.nav-item.on{background:var(--accent-soft);color:var(--accent)}
+.main{padding:26px 28px 60px;max-width:1180px}
+.page-head{display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+.page-head h2{font-size:1.3rem}
+.page-head .spacer{flex:1}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px;margin-bottom:20px}
+.card h3{font-size:1.02rem;margin-bottom:14px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:20px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+.stat .n{font-size:1.9rem;font-weight:800;color:var(--accent)}
+.stat .l{font-size:.82rem;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:.78rem;color:var(--muted);font-weight:700;letter-spacing:.04em;background:#f8fbfa}
+tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#f6faf9}
+.tag{display:inline-block;font-size:.75rem;padding:2px 10px;border-radius:99px;background:var(--bg);color:var(--muted)}
+.score-pill{font-weight:700;color:var(--accent)}
+.patient-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.patient-card .bed{font-size:.75rem;font-weight:700;color:var(--accent);background:var(--accent-soft);border-radius:6px;padding:2px 8px;display:inline-block;margin-bottom:8px}
+.patient-card .name{font-size:1.1rem;font-weight:700}
+.patient-card .meta{font-size:.82rem;color:var(--muted);margin:4px 0 12px}
+.patient-card .acts{display:flex;gap:8px;flex-wrap:wrap}
+.empty{padding:40px;text-align:center;color:var(--muted);font-size:.9rem}
+.scale-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.scale-card{border:1.5px solid var(--line);border-radius:var(--radius);padding:18px;background:#fff;cursor:pointer;transition:.15s}
+.scale-card:hover{border-color:var(--accent);box-shadow:var(--shadow)}
+.scale-card b{display:block;margin-bottom:4px}
+.scale-card span{font-size:.8rem;color:var(--muted)}
+.item{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:12px;background:#fbfdfd}
+.item .q{font-weight:600;margin-bottom:8px;font-size:.95rem}
+.opts{display:flex;flex-direction:column;gap:6px}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:8px;border:1px solid transparent;cursor:pointer;font-size:.88rem}
+.opt:hover{background:var(--bg)}
+.opt.on{border-color:var(--accent);background:var(--accent-soft)}
+.opt .pts{margin-left:auto;font-weight:700;color:var(--accent);white-space:nowrap}
+.scorebar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--line);padding:14px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;z-index:10}
+.scorebar .total{font-size:1.25rem;font-weight:800;color:var(--accent)}
+.interp{font-size:.85rem;color:var(--warn);font-weight:600}
+textarea#note{width:100%;min-height:70px;padding:10px;border:1px solid var(--line);border-radius:9px}
+.crumb{font-size:.85rem;color:var(--muted);margin-bottom:14px}
+.crumb a{color:var(--accent);cursor:pointer;text-decoration:none}
+.modal-mask{position:fixed;inset:0;background:rgba(10,25,22,.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
+.modal{background:#fff;border-radius:14px;max-width:560px;width:100%;padding:26px;max-height:86vh;overflow:auto}
+@media(max-width:820px){.shell{grid-template-columns:1fr}.sidebar{display:flex;overflow-x:auto;padding:8px}.nav-item{white-space:nowrap}.main{padding:16px}}
+</style>
+</head>
+<body>
+
+<!-- ============ 登录 / 注册 ============ -->
+<div id="auth-view">
+  <div class="auth-card">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      </div>
+      <h1>康复评定助手</h1>
+    </div>
+    <p class="brand-sub">床旁康复评定 · 离线运行 · 数据不出本机</p>
+    <div class="tabs">
+      <button id="tab-login" class="on" onclick="switchAuth('login')">登录</button>
+      <button id="tab-reg" onclick="switchAuth('reg')">注册评定师账号</button>
+    </div>
+
+    <div id="form-login">
+      <div class="field"><label>用户名</label><input id="li-user" autocomplete="username"></div>
+      <div class="field"><label>密码</label><input id="li-pass" type="password" autocomplete="current-password"></div>
+      <div class="form-msg" id="li-msg"></div>
+      <button class="btn btn-primary" onclick="doLogin()">登 录</button>
+      <p style="margin-top:16px;font-size:.82rem;color:var(--muted)">收到同事发来的加密评定数据？
+        <a class="linkish" onclick="go('decrypt');document.getElementById('auth-view').classList.add('hidden');document.getElementById('app-view').classList.remove('hidden');session=null;">解密查看（无需登录）</a>
+      </p>
+    </div>
+
+    <div id="form-reg" class="hidden">
+      <div class="field"><label>用户名</label><input id="rg-user" placeholder="登录账号"></div>
+      <div class="field"><label>姓名</label><input id="rg-name" placeholder="真实姓名，用于评定记录署名"></div>
+      <div class="field"><label>密码（至少6位）</label><input id="rg-pass" type="password"></div>
+      <div class="field"><label>确认密码</label><input id="rg-pass2" type="password"></div>
+      <div class="form-msg" id="rg-msg"></div>
+      <button class="btn btn-primary" onclick="doRegister()">注册为评定师</button>
+    </div>
+
+    <div class="privacy-note">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex:none;margin-top:2px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <span><b>隐私设计：</b>① 所有患者数据只保存在<b>本机</b>，不联网、不上传任何服务器；② 每个账号的数据<b>互相隔离</b>，任何账号（包括他人）都无法查看您的患者；③ 导出文件经 <b>AES-256 加密</b>，只有知道导出密码的人才能打开；④ 请在自己的设备上使用，离开前退出登录。</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 主界面 ============ -->
+<div id="app-view" class="hidden">
+  <div class="topbar">
+    <div class="t-title">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      康复评定助手
+    </div>
+    <div class="t-user">
+      <span id="user-label"></span>
+      <span id="role-badge" class="role-badge"></span>
+      <a class="logout" href="javascript:doLogout()" id="logout-link">退出登录</a>
+    </div>
+  </div>
+  <div class="shell">
+    <nav class="sidebar" id="nav">
+      <button class="nav-item on" data-page="dash" onclick="go('dash')">工作台</button>
+      <button class="nav-item" data-page="patients" onclick="go('patients')">患者管理</button>
+      <button class="nav-item" data-page="records" onclick="go('records')">评定记录</button>
+      <button class="nav-item" data-page="export" onclick="go('export')">导出数据</button>
+      <button class="nav-item" data-page="decrypt" onclick="go('decrypt')">解密查看</button>
+    </nav>
+    <main class="main" id="main"></main>
+  </div>
+</div>
+
+<script>
+/* ================= 存储层 =================
+   - 仅 localStorage，本机保存，无网络
+   - 账号数据隔离：患者与记录保存在 kfp_data_<用户名>，其他账号不可见
+   - 导出：AES-256-GCM 加密（PBKDF2 派生密钥），密码由评定师口头告知管理员 */
+const DB = {
+  read(k, def){ try{ const v = localStorage.getItem(k); return v?JSON.parse(v):def; }catch(e){ return def; } },
+  write(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
+};
+function hash(s){ let h=5381; const str='kfp_salt::'+s; for(let i=0;i<str.length;i++){ h=((h<<5)+h+str.charCodeAt(i))>>>0; } return 'h'+h.toString(36); }
+const getUsers = ()=>DB.read('kfp_users',[]);
+let session = null;
+let current = { pid:null, scaleId:null, answers:{} };
+
+/* 当前账号的私有数据（数据隔离核心） */
+function myData(){ return DB.read('kfp_data_'+session.username, {patients:[], records:[]}); }
+function saveMyData(d){ DB.write('kfp_data_'+session.username, d); }
+const getPatients = ()=>myData().patients;
+const getRecords  = ()=>myData().records;
+
+/* ================= 量表（依据文件夹内量表整理） ================= */
+const SCALES = [
+{ id:'barthel', name:'改良Barthel指数（ADL）', desc:'日常生活活动能力，10项，总分100分', max:100, items:[
+  {q:'进食', o:[['10 独立（可自取食物、穿脱辅具）',10],['8 小部分帮助',8],['5 较大帮助',5],['2 很大程度依赖',2],['0 完全依赖',0]]},
+  {q:'洗澡', o:[['5 独立',5],['4 需少量帮助',4],['3 需较多帮助',3],['1 极大帮助',1],['0 完全依赖',0]]},
+  {q:'修饰（洗漱、梳头、剃须等）', o:[['5 独立',5],['4 需少量帮助',4],['3 需较多帮助',3],['1 极大帮助',1],['0 完全依赖',0]]},
+  {q:'穿衣', o:[['10 独立',10],['8 需少量帮助',8],['5 需较多帮助',5],['2 极大帮助',2],['0 完全依赖',0]]},
+  {q:'控制大便', o:[['10 可控制',10],['8 偶尔失禁',8],['5 需帮助使用栓剂/灌肠',5],['2 经常失禁',2],['0 完全失控',0]]},
+  {q:'控制小便', o:[['10 可控制',10],['8 偶尔失禁',8],['5 需帮助',5],['2 经常失禁',2],['0 完全失控',0]]},
+  {q:'如厕', o:[['10 独立',10],['8 需少量帮助',8],['5 需较多帮助',5],['2 极大帮助',2],['0 完全依赖',0]]},
+  {q:'床椅转移', o:[['15 独立',15],['12 需少量帮助（口头/监督）',12],['8 需较多帮助',8],['5 极大帮助',5],['0 完全依赖',0]]},
+  {q:'平地行走', o:[['15 独立行走50米以上',15],['12 需少量帮助行走50米',12],['8 需较多帮助',8],['5 不能走但独立操作轮椅50米',5],['0 完全不能',0]]},
+  {q:'上下楼梯', o:[['10 独立',10],['8 需少量帮助',8],['5 需较多帮助',5],['2 极大帮助',2],['0 完全依赖',0]]}],
+  interp:s=> s>=100?'生活自理': s>=60?'轻度依赖，基本自理': s>=40?'中度依赖，需要帮助': s>=20?'重度依赖':'完全依赖' },
+
+{ id:'berg', name:'Berg平衡量表', desc:'平衡功能，14项，总分56分', max:56,
+  items:['从坐到站','无支撑站立','无靠背坐位（双脚着地）','从站到坐','转移','闭目站立','双脚并拢站立','站立位上肢前伸','站立位从地上拾物','站立位转身向后看','转身360°','双脚交替踏台阶','双脚前后站立','单腿站立']
+    .map(t=>({q:t, o:[['4 能独立/安全完成（最高级）',4],['3 能完成，需少量监督或提示',3],['2 能完成，需一定帮助/时间短',2],['1 需大量帮助',1],['0 不能完成',0]]})),
+  interp:s=> s>=41?'跌倒风险低': s>=21?'中度跌倒风险':'高度跌倒风险' },
+
+{ id:'mmse', name:'简明精神状态量表（MMSE）', desc:'认知功能筛查，30项，总分30分', max:30,
+  items:['定向力：现在是哪一年','定向力：什么季节','定向力：几月','定向力：几号','定向力：星期几','定向力：我们在哪个省','定向力：哪个市','定向力：哪个区（县）','定向力：什么地方（医院/家）','定向力：第几层楼','即刻记忆：复述“皮球”','即刻记忆：复述“国旗”','即刻记忆：复述“树木”','注意计算：100-7（第1次）','100-7（第2次：93-7）','100-7（第3次：86-7）','100-7（第4次：79-7）','100-7（第5次：72-7）','延迟回忆：皮球','延迟回忆：国旗','延迟回忆：树木','命名：说出所指物品名称（1）','命名：说出所指物品名称（2）','复述：“大家齐心协力拉紧绳”','三步指令：用右手拿纸','三步指令：把纸对折','三步指令：放在大腿上','阅读：执行“闭上您的眼睛”','书写：写一句完整句子','视空间：临摹交叉五边形']
+    .map(t=>({q:t, o:[['1 正确',1],['0 错误',0]]})),
+  interp:s=> (s>=27?'认知功能正常': s>=21?'轻度认知障碍': s>=10?'中度认知障碍':'重度认知障碍')+'（未校正文化程度：文盲≥17、小学≥20、初中及以上≥24为正常界值）' },
+
+{ id:'moca', name:'蒙特利尔认知评估（MoCA）', desc:'轻度认知障碍筛查，总分30分', max:30,
+  items:['视空间/执行：连线','视空间/执行：临摹立方体','视空间/执行：画钟（轮廓）','视空间/执行：画钟（数字）','视空间/执行：画钟（指针）','命名：狮子','命名：犀牛','命名：骆驼','注意：数字顺背','注意：数字倒背','注意：警觉性（听字母敲击）','注意：连续减7（第1次）','注意：连续减7（第2次）','注意：连续减7（第3次）','语言：句子复述（1）','语言：句子复述（2）','语言：流畅性（1分钟内说≥11个动物）','抽象：相似性（如 火车-自行车）','抽象：相似性（如 手表-尺子）','延迟回忆：面孔（无提示）','延迟回忆：天鹅绒（无提示）','延迟回忆：教堂（无提示）','延迟回忆：菊花（无提示）','延迟回忆：红色（无提示）','定向：日期','定向：月份','定向：年份','定向：星期','定向：地点','定向：城市']
+    .map(t=>({q:t, o:[['1 正确/得分',1],['0 错误/不得分',0]]})),
+  interp:s=> s>=26?'认知功能正常（受教育≤12年可加1分校正）':'提示认知功能障碍（受教育≤12年可加1分校正）' },
+
+{ id:'gcs', name:'格拉斯哥昏迷量表（GCS）', desc:'意识障碍程度，三项合计3-15分', max:15, items:[
+  {q:'睁眼反应 E', o:[['4 自动睁眼',4],['3 呼唤睁眼',3],['2 刺痛睁眼',2],['1 不睁眼',1]]},
+  {q:'语言反应 V', o:[['5 回答正确',5],['4 回答错误/答非所问',4],['3 只能说出单词（不适当）',3],['2 只能发音',2],['1 不能发音',1]]},
+  {q:'运动反应 M', o:[['6 按吩咐动作',6],['5 刺痛能定位',5],['4 刺痛能躲避',4],['3 刺痛肢体屈曲（去皮层）',3],['2 刺痛肢体伸展（去大脑）',2],['1 无反应',1]]}],
+  interp:s=> (s>=15?'意识清楚': s>=12?'轻度意识障碍': s>=9?'中度意识障碍':'重度意识障碍（≤8分为昏迷）')+'（E+V+M = '+s+'分）' },
+
+{ id:'brunnstrom', name:'Brunnstrom偏瘫运动功能评价', desc:'偏瘫运动恢复分期（I-VI期）', max:18, items:[
+  {q:'上肢分期', o:[['Ⅰ期 弛缓，无随意运动',1],['Ⅱ期 开始出现痉挛及共同运动',2],['Ⅲ期 共同运动达高峰，痉挛加重',3],['Ⅳ期 出现部分分离运动，痉挛减轻',4],['Ⅴ期 分离运动为主，痉挛明显减轻',5],['Ⅵ期 运动接近正常，协调性好',6]]},
+  {q:'手分期', o:[['Ⅰ期 弛缓，无随意运动',1],['Ⅱ期 仅有极细微屈曲',2],['Ⅲ期 可作勾状抓握，不能伸指',3],['Ⅳ期 能侧捏及松开拇指，手指半随意伸展',4],['Ⅴ期 可作球状/柱状抓握，手指同时伸展',5],['Ⅵ期 各种抓握均完成，指外展及单个手指活动良好',6]]},
+  {q:'下肢分期', o:[['Ⅰ期 弛缓，无随意运动',1],['Ⅱ期 出现共同运动及痉挛',2],['Ⅲ期 共同运动达高峰，可随意屈伸',3],['Ⅳ期 坐位可屈膝90°、足背屈',4],['Ⅴ期 站立位可伸膝屈髋、踝背屈',5],['Ⅵ期 运动接近正常',6]]}],
+  interp:s=> s>=16?'整体处于Ⅴ-Ⅵ期（分离运动期）': s>=11?'整体处于Ⅳ-Ⅴ期': s>=6?'整体处于Ⅱ-Ⅲ期（痉挛/共同运动期）':'整体处于Ⅰ-Ⅱ期（弛缓期）' },
+
+{ id:'ashworth', name:'改良Ashworth肌张力评定', desc:'肌张力分级 0-4级（含1+）', max:0, notScored:true, items:[
+  {q:'受累部位（如：右上肢屈肘肌群）', o:[['0级 无肌张力增高',0],['1级 肌张力略增：被动屈伸至ROM末有轻微阻力',1],['1+级 肌张力轻度增加：ROM前50%内突然卡住，后50%阻力最小',2],['2级 肌张力明显增加：大部分ROM阻力明显，但受累部分仍能移动',3],['3级 肌张力严重增高：被动运动困难',4],['4级 僵直：受累部分被动屈伸时呈僵直状态，不能活动',5]]}],
+  interp:(s,a)=>{ const m={0:'0级：无肌张力增高',1:'1级：肌张力略增',2:'1+级：肌张力轻度增加',3:'2级：肌张力明显增加',4:'3级：肌张力严重增高',5:'4级：僵直'}; return m[a[0]]||''; } },
+
+{ id:'mmt', name:'徒手肌力评定（MMT）', desc:'肌力0-5级', max:0, notScored:true, items:[
+  {q:'受检肌群肌力', o:[['5级 正常：抗重力及充分阻力完成全范围运动',5],['4级 良好：抗重力及一定阻力完成全范围运动',4],['3级 可：抗重力完成全范围运动，不能抗阻力',3],['2级 差：减重状态下完成全范围运动',2],['1级 微缩：可触及肌肉收缩，但不能产生关节活动',1],['0级 零：无可测知的肌肉收缩',0]]}],
+  interp:(s,a)=>{ const m={5:'5级 正常肌力',4:'4级 良好',3:'3级 可抗重力',2:'2级 减重可动',1:'1级 肌肉微缩',0:'0级 无收缩'}; return m[a[0]]||''; } },
+
+{ id:'fma', name:'Fugl-Meyer平衡功能评定', desc:'平衡部分，7项，总分14分', max:14,
+  items:['无支撑坐位','健侧展翅反应','患侧展翅反应','支撑站立','无支撑站立','健腿站立','患腿站立']
+    .map(t=>({q:t, o:[['2 正常/能完成',2],['1 部分完成/需监督',1],['0 不能完成',0]]})),
+  interp:s=> s>=12?'平衡功能较好': s>=7?'平衡功能中度受损':'平衡功能严重受损' }
+];
+
+/* ================= 认证 ================= */
+function switchAuth(w){
+  document.getElementById('tab-login').classList.toggle('on', w==='login');
+  document.getElementById('tab-reg').classList.toggle('on', w==='reg');
+  document.getElementById('form-login').classList.toggle('hidden', w!=='login');
+  document.getElementById('form-reg').classList.toggle('hidden', w!=='reg');
+}
+function rg(id){ return document.getElementById(id).value; }
+function doRegister(){
+  const u=rg('rg-user').trim(), n=rg('rg-name').trim(), p=rg('rg-pass'), p2=rg('rg-pass2');
+  const msg=m=>document.getElementById('rg-msg').textContent=m;
+  if(!u||!n||!p) return msg('请完整填写信息');
+  if(p.length<6) return msg('密码至少6位');
+  if(p!==p2) return msg('两次密码不一致');
+  const users=getUsers();
+  if(users.some(x=>x.username===u)) return msg('该用户名已被注册');
+  users.push({username:u, name:n, pass:hash(u+'|'+p), created:new Date().toISOString()});
+  DB.write('kfp_users',users);
+  alert('注册成功，请登录'); switchAuth('login');
+  document.getElementById('li-user').value=u;
+}
+function doLogin(){
+  const u=rg('li-user').trim(), p=rg('li-pass');
+  const user=getUsers().find(x=>x.username===u && x.pass===hash(u+'|'+p));
+  if(!user){ document.getElementById('li-msg').textContent='用户名或密码错误'; return; }
+  session=user;
+  enterApp();
+  go('dash');
+}
+function enterApp(){
+  document.getElementById('auth-view').classList.add('hidden');
+  document.getElementById('app-view').classList.remove('hidden');
+  document.getElementById('user-label').textContent = session?session.name:'访客（解密模式）';
+  document.getElementById('role-badge').textContent = session?'评定师':'—';
+  document.getElementById('logout-link').textContent = session?'退出登录':'返回登录';
+  // 未登录（解密模式）时只显示“解密查看”
+  document.querySelectorAll('#nav .nav-item').forEach(n=>{
+    n.classList.toggle('hidden', !session && n.dataset.page!=='decrypt');
+  });
+}
+function doLogout(){ session=null; current={pid:null,scaleId:null,answers:{}}; document.getElementById('app-view').classList.add('hidden'); document.getElementById('auth-view').classList.remove('hidden'); }
+
+/* ================= 路由 ================= */
+function go(page, arg){
+  if(!session && page!=='decrypt'){ page='decrypt'; }
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('on', n.dataset.page===page));
+  const m=document.getElementById('main');
+  if(page==='dash') renderDash(m);
+  else if(page==='patients') renderPatients(m);
+  else if(page==='records') renderRecords(m);
+  else if(page==='export') renderExport(m);
+  else if(page==='decrypt') renderDecrypt(m);
+  else if(page==='pickScale') renderPickScale(m);
+  else if(page==='assess') renderAssess(m);
+  window.scrollTo(0,0);
+}
+
+/* ================= 工作台 ================= */
+function renderDash(m){
+  const ps=getPatients(), rs=getRecords();
+  const today=rs.filter(r=>r.time.slice(0,10)===new Date().toISOString().slice(0,10)).length;
+  m.innerHTML=`
+  <div class="page-head"><h2>工作台</h2><span class="tag">${new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'})}</span></div>
+  <div class="stat-grid">
+    <div class="stat"><div class="n">${ps.length}</div><div class="l">我的患者</div></div>
+    <div class="stat"><div class="n">${rs.length}</div><div class="l">我的评定记录</div></div>
+    <div class="stat"><div class="n">${today}</div><div class="l">今日评定</div></div>
+    <div class="stat"><div class="n">${SCALES.length}</div><div class="l">可用量表</div></div>
+  </div>
+  <div class="card">
+    <h3>开始床旁评定</h3>
+    <p style="font-size:.88rem;color:var(--muted);margin-bottom:14px">先在患者管理中添加患者（姓名、床号、年龄），再选择患者开始评定；评定结果自动保存在本机，且仅您的账号可见。</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-line" onclick="go('patients')">+ 添加 / 选择患者</button>
+      <button class="btn btn-line" onclick="go('records')">查看评定记录</button>
+      <button class="btn btn-line" onclick="go('export')">加密导出数据给管理员</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>隐私与数据说明</h3>
+    <p style="font-size:.87rem;color:var(--muted)">所有患者信息与评定结果仅存储于本台设备，并按账号隔离——其他评定师登录后看不到您的数据。向管理员汇报时，请使用「导出数据」生成 AES-256 加密文件，并通过线下方式单独告知导出密码。清除浏览器数据会删除本地记录，请定期加密导出备份。</p>
+  </div>`;
+}
+
+/* ================= 患者管理 ================= */
+function renderPatients(m){
+  const ps=getPatients();
+  m.innerHTML=`
+  <div class="page-head"><h2>患者管理</h2><span class="tag">仅当前账号可见</span></div>
+  <div class="card"><h3>新增患者</h3>
+    <div class="grid3">
+      <div class="field"><label>姓名</label><input id="np-name"></div>
+      <div class="field"><label>床号</label><input id="np-bed" placeholder="如 12床"></div>
+      <div class="field"><label>年龄</label><input id="np-age" type="number" min="0" max="150"></div>
+    </div>
+    <div class="field"><label>备注（可选）</label><input id="np-note" placeholder="诊断、注意事项等"></div>
+    <button class="btn btn-primary" style="width:auto" onclick="addPatient()">保存患者</button>
+  </div>
+  <div class="card"><h3>我的患者（${ps.length}）</h3>
+    ${ps.length? '<div class="grid3">'+ps.map(p=>`
+      <div class="patient-card">
+        <span class="bed">${esc(p.bed)}</span>
+        <div class="name">${esc(p.name)}</div>
+        <div class="meta">${p.age}岁 · ${esc(p.note||'无备注')} · 评定${getRecords().filter(r=>r.pid===p.id).length}次</div>
+        <div class="acts">
+          <button class="btn btn-primary btn-sm" onclick="startAssess('${p.id}')">开始评定</button>
+          <button class="btn btn-danger btn-sm" onclick="delPatient('${p.id}')">删除</button>
+        </div>
+      </div>`).join('')+'</div>'
+    : '<div class="empty">暂无患者，请先添加</div>'}
+  </div>`;
+}
+function addPatient(){
+  const name=rg('np-name').trim(), bed=rg('np-bed').trim(), age=rg('np-age').trim(), note=rg('np-note').trim();
+  if(!name||!bed||!age) return alert('请填写姓名、床号、年龄');
+  const d=myData();
+  d.patients.push({id:'p'+Date.now(), name, bed, age:+age, note, created:new Date().toISOString(), by:session.name});
+  saveMyData(d); renderPatients(document.getElementById('main'));
+}
+function delPatient(id){
+  if(!confirm('删除该患者及其所有评定记录？此操作不可恢复。')) return;
+  const d=myData();
+  d.patients=d.patients.filter(p=>p.id!==id);
+  d.records=d.records.filter(r=>r.pid!==id);
+  saveMyData(d); renderPatients(document.getElementById('main'));
+}
+
+/* ================= 评定流程 ================= */
+function startAssess(pid){ current={pid, scaleId:null, answers:{}}; go('pickScale'); }
+function renderPickScale(m){
+  const p=getPatients().find(x=>x.id===current.pid);
+  if(!p) return go('patients');
+  m.innerHTML=`
+  <div class="crumb"><a onclick="go('patients')">患者管理</a> / 选择量表</div>
+  <div class="page-head"><h2>${esc(p.name)}（${esc(p.bed)}，${p.age}岁）</h2><span class="tag">床旁评定 · 选择量表</span></div>
+  <div class="scale-grid">
+    ${SCALES.map(s=>`<div class="scale-card" onclick="pickScale('${s.id}')"><b>${s.name}</b><span>${s.desc}</span></div>`).join('')}
+  </div>`;
+}
+function pickScale(sid){ current.scaleId=sid; current.answers={}; go('assess'); }
+function renderAssess(m){
+  const p=getPatients().find(x=>x.id===current.pid);
+  const s=SCALES.find(x=>x.id===current.scaleId);
+  m.innerHTML=`
+  <div class="crumb"><a onclick="go('patients')">患者管理</a> / <a onclick="go('pickScale')">选择量表</a> / ${s.name}</div>
+  <div class="page-head"><h2>${s.name}</h2><span class="tag">${esc(p.name)} · ${esc(p.bed)} · ${p.age}岁 · 评定师：${esc(session.name)}</span></div>
+  <div class="card">
+    ${s.items.map((it,i)=>`
+      <div class="item"><div class="q">${i+1}. ${it.q}</div>
+        <div class="opts">${it.o.map(([label,pts])=>`
+          <div class="opt ${current.answers[i]===pts?'on':''}" onclick="answer(${i},${pts})">
+            <span>${label}</span><span class="pts">${s.notScored?'':pts+'分'}</span>
+          </div>`).join('')}
+        </div>
+      </div>`).join('')}
+    <div class="field" style="margin-top:14px"><label>评定备注</label><textarea id="note" placeholder="可记录受累部位、配合程度、环境等"></textarea></div>
+  </div>
+  <div class="scorebar">
+    <div>已完成 <b id="done-n">0</b>/${s.items.length} 项</div>
+    ${s.notScored?'':'<div class="total">总分：<span id="total-n">0</span> / '+s.max+'</div>'}
+    <div class="interp" id="interp"></div>
+    <div style="flex:1"></div>
+    <button class="btn btn-primary" onclick="saveRecord()">保存评定结果</button>
+  </div>`;
+  updateScore();
+}
+function answer(i,pts){
+  current.answers[i]=pts;
+  const items=document.querySelectorAll('.item');
+  items[i].querySelectorAll('.opt').forEach(o=>o.classList.remove('on'));
+  const idx=SCALES.find(x=>x.id===current.scaleId).items[i].o.findIndex(x=>x[1]===pts);
+  items[i].querySelectorAll('.opt')[idx].classList.add('on');
+  updateScore();
+}
+function updateScore(){
+  const s=SCALES.find(x=>x.id===current.scaleId);
+  const vals=Object.values(current.answers);
+  const done=vals.length, total=vals.reduce((a,b)=>a+b,0);
+  const dn=document.getElementById('done-n'); if(dn) dn.textContent=done;
+  const tn=document.getElementById('total-n'); if(tn) tn.textContent=total;
+  const ip=document.getElementById('interp');
+  if(ip) ip.textContent = done===s.items.length ? '结果解读：'+s.interp(total, current.answers) : '';
+}
+function saveRecord(){
+  const s=SCALES.find(x=>x.id===current.scaleId);
+  if(Object.keys(current.answers).length < s.items.length) return alert('请完成所有评定项目后再保存');
+  const total=Object.values(current.answers).reduce((a,b)=>a+b,0);
+  const p=getPatients().find(x=>x.id===current.pid);
+  const d=myData();
+  d.records.unshift({
+    id:'r'+Date.now(), pid:current.pid, pname:p.name, pbed:p.bed, page:p.age,
+    scale:s.name, max:s.max, notScored:!!s.notScored,
+    score:total, detail:current.answers,
+    interp:s.interp(total, current.answers),
+    note:(document.getElementById('note')||{}).value||'',
+    assessor:session.name, time:new Date().toISOString()
+  });
+  saveMyData(d);
+  alert('评定结果已保存在本机');
+  current={pid:null,scaleId:null,answers:{}};
+  go('records');
+}
+
+/* ================= 评定记录 ================= */
+function recordsTable(rs){
+  return rs.length? `<table><thead><tr><th>时间</th><th>患者</th><th>床号</th><th>年龄</th><th>量表</th><th>结果</th><th>评定师</th></tr></thead><tbody>
+    ${rs.map(r=>`<tr>
+      <td>${new Date(r.time).toLocaleString('zh-CN')}</td>
+      <td>${esc(r.pname)}</td><td>${esc(r.pbed)}</td><td>${r.page}</td>
+      <td>${esc(r.scale)}</td>
+      <td><span class="score-pill">${r.notScored? esc(r.interp.split('：')[0]) : r.score+' / '+r.max}</span></td>
+      <td>${esc(r.assessor)}</td>
+    </tr>`).join('')}</tbody></table>` : '<div class="empty">暂无评定记录</div>';
+}
+function renderRecords(m){
+  const rs=getRecords();
+  m.innerHTML=`
+  <div class="page-head"><h2>评定记录</h2><span class="tag">共 ${rs.length} 条 · 仅存本机 · 仅本账号可见</span></div>
+  <div class="card">
+  ${rs.length? `<table><thead><tr><th>时间</th><th>患者</th><th>床号</th><th>年龄</th><th>量表</th><th>结果</th><th></th></tr></thead><tbody>
+    ${rs.map(r=>`<tr>
+      <td>${new Date(r.time).toLocaleString('zh-CN')}</td>
+      <td>${esc(r.pname)}</td><td>${esc(r.pbed)}</td><td>${r.page}</td>
+      <td>${esc(r.scale)}</td>
+      <td><span class="score-pill">${r.notScored? esc(r.interp.split('：')[0]) : r.score+' / '+r.max}</span></td>
+      <td><button class="btn btn-line btn-sm" onclick="viewRecord('${r.id}')">详情</button>
+      <button class="btn btn-danger btn-sm" onclick="delRecord('${r.id}')">删除</button></td>
+    </tr>`).join('')}</tbody></table>` : '<div class="empty">暂无评定记录</div>'}
+  </div>`;
+}
+function viewRecord(id){
+  const r=getRecords().find(x=>x.id===id); if(!r) return;
+  const s=SCALES.find(x=>x.name===r.scale);
+  const div=document.createElement('div');
+  div.className='modal-mask'; div.onclick=e=>{ if(e.target===div) div.remove(); };
+  div.innerHTML=`<div class="modal">
+    <h3 style="margin-bottom:10px">${esc(r.scale)}</h3>
+    <p style="font-size:.86rem;color:var(--muted);margin-bottom:12px">${esc(r.pname)} · ${esc(r.pbed)} · ${r.page}岁 ｜ ${new Date(r.time).toLocaleString('zh-CN')} ｜ 评定师：${esc(r.assessor)}</p>
+    <p style="margin-bottom:10px"><b>${r.notScored?'结果':'总分：'+r.score+' / '+r.max}</b> <span style="color:var(--warn)">${esc(r.interp)}</span></p>
+    ${s? '<div style="font-size:.85rem">'+s.items.map((it,i)=>{const pts=r.detail[i];const lab=(it.o.find(o=>o[1]===pts)||['—'])[0];return `<p style="padding:5px 0;border-bottom:1px solid var(--line)">${i+1}. ${it.q}：<b>${esc(lab)}</b></p>`;}).join('')+'</div>':''}
+    ${r.note? `<p style="margin-top:10px;font-size:.85rem"><b>备注：</b>${esc(r.note)}</p>`:''}
+    <button class="btn btn-line" style="margin-top:16px" onclick="this.closest('.modal-mask').remove()">关闭</button>
+  </div>`;
+  document.body.appendChild(div);
+}
+function delRecord(id){
+  if(!confirm('删除该条评定记录？')) return;
+  const d=myData(); d.records=d.records.filter(r=>r.id!==id); saveMyData(d);
+  renderRecords(document.getElementById('main'));
+}
+
+/* ================= 加密导出（评定师 → 管理员） ================= */
+async function deriveKey(password, salt){
+  const enc=new TextEncoder();
+  const base=await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2', salt, iterations:150000, hash:'SHA-256'}, base, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
+}
+function buf2b64(b){ return btoa(String.fromCharCode(...new Uint8Array(b))); }
+function b642buf(s){ return Uint8Array.from(atob(s), c=>c.charCodeAt(0)); }
+
+function renderExport(m){
+  const d=myData();
+  m.innerHTML=`
+  <div class="page-head"><h2>导出数据给管理员</h2></div>
+  <div class="card">
+    <h3>加密导出我的全部数据</h3>
+    <p style="font-size:.88rem;color:var(--muted);margin-bottom:14px">
+      将导出您账号下的 ${d.patients.length} 名患者、${d.records.length} 条评定记录。
+      文件使用 <b>AES-256-GCM</b> 加密，请设置一个<b>导出密码</b>，把文件通过微信/邮件发给管理员后，
+      <b>用电话或当面等另一条渠道单独告知密码</b>。管理员在本应用登录页选择「解密查看」即可打开。
+    </p>
+    <div class="field" style="max-width:320px"><label>导出密码（至少6位）</label><input id="ex-pass" type="password"></div>
+    <div class="field" style="max-width:320px"><label>确认导出密码</label><input id="ex-pass2" type="password"></div>
+    <button class="btn btn-primary" style="width:auto" onclick="exportEncrypted()">生成加密文件并下载</button>
+    <p class="form-msg" id="ex-msg"></p>
+  </div>`;
+}
+async function exportEncrypted(){
+  const p=rg('ex-pass'), p2=rg('ex-pass2');
+  const msg=m=>document.getElementById('ex-msg').textContent=m;
+  if(p.length<6) return msg('导出密码至少6位');
+  if(p!==p2) return msg('两次密码不一致');
+  try{
+    const payload={app:'kangfu-assessor', version:2, exportedBy:session.name, exportedAt:new Date().toISOString(), data:myData()};
+    const salt=crypto.getRandomValues(new Uint8Array(16));
+    const iv=crypto.getRandomValues(new Uint8Array(12));
+    const key=await deriveKey(p, salt);
+    const plain=new TextEncoder().encode(JSON.stringify(payload));
+    const cipher=await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, plain);
+    const out=JSON.stringify({fmt:'kfp-aes256gcm', salt:buf2b64(salt), iv:buf2b64(iv), data:buf2b64(cipher)});
+    const blob=new Blob([out],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download='康复评定数据_'+session.name+'_'+new Date().toISOString().slice(0,10)+'.kfp.json';
+    a.click();
+    msg(''); alert('加密文件已下载。请把文件发给管理员，并通过另一渠道单独告知导出密码。');
+  }catch(e){ msg('加密失败：'+e.message); }
+}
+
+/* ================= 解密查看（管理员使用，无需登录） ================= */
+function renderDecrypt(m){
+  m.innerHTML=`
+  <div class="page-head"><h2>解密查看评定数据</h2><span class="tag">供管理员使用 · 全程本机解密，不上传</span></div>
+  <div class="card">
+    <h3>打开评定师发来的加密文件</h3>
+    <div class="field" style="max-width:420px"><label>加密文件（.kfp.json）</label><input id="dc-file" type="file" accept=".json,application/json"></div>
+    <div class="field" style="max-width:320px"><label>导出密码（向评定师索取）</label><input id="dc-pass" type="password"></div>
+    <button class="btn btn-primary" style="width:auto" onclick="decryptView()">解密并查看</button>
+    <p class="form-msg" id="dc-msg"></p>
+  </div>
+  <div id="dc-result"></div>`;
+}
+async function decryptView(){
+  const f=document.getElementById('dc-file').files[0], p=rg('dc-pass');
+  const msg=m=>document.getElementById('dc-msg').textContent=m;
+  if(!f) return msg('请选择加密文件');
+  if(!p) return msg('请输入导出密码');
+  try{
+    const pack=JSON.parse(await f.text());
+    if(pack.fmt!=='kfp-aes256gcm') return msg('文件格式不正确');
+    const key=await deriveKey(p, b642buf(pack.salt));
+    const plain=await crypto.subtle.decrypt({name:'AES-GCM', iv:b642buf(pack.iv)}, key, b642buf(pack.data));
+    const payload=JSON.parse(new TextDecoder().decode(plain));
+    const d=payload.data||{patients:[],records:[]};
+    document.getElementById('dc-result').innerHTML=`
+    <div class="card">
+      <h3>数据概要</h3>
+      <p style="font-size:.88rem;color:var(--muted);margin-bottom:12px">导出评定师：<b>${esc(payload.exportedBy||'未知')}</b> ｜ 导出时间：${payload.exportedAt?new Date(payload.exportedAt).toLocaleString('zh-CN'):'—'} ｜ 患者 ${d.patients.length} 名 ｜ 评定记录 ${d.records.length} 条</p>
+      ${recordsTable(d.records)}
+    </div>`;
+    msg('');
+  }catch(e){ msg('解密失败：密码错误或文件已损坏'); }
+}
+
+function esc(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* PWA：注册 Service Worker（仅在同源部署时生效） */
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
